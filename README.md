@@ -1,4 +1,4 @@
-# 🖼️ Image Encryption & Decryption
+# 🖼️   SecurePix(Image Encryption & Decryption)
 
 Welcome to the **Image Encryption & Decryption** application! This project is a simple yet powerful tool built using Python's Tkinter and OpenCV libraries, allowing users to encrypt and decrypt images with ease.
 
