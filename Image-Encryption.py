@@ -1,104 +1,197 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox as mbox
-from PIL import ImageTk, Image
+from PIL import Image
 import cv2
 import numpy as np
-window = tk.Tk()
-window.geometry("1000x700")
-window.title("Image Encryption Decryption")
-window.configure(bg="#1A1A2E")
-global count, eimg
-panelB = None
-panelA = None
-def getpath(path):
-    return '/'.join(path.split(r'/')[:-1])
-def getfilename(path):
-    return path.split(r'/')[-1].split('.')[0]
-def openfilename():
-    return filedialog.askopenfilename(title='Open')
-def open_img():
-    global x, panelA, panelB, eimg, location, filename
-    count = 0
-    x = openfilename()
-    img = Image.open(x)
-    eimg = img
-    img = ImageTk.PhotoImage(img)
-    location = getpath(x)
-    filename = getfilename(x)
-    if panelA is None or panelB is None:
-        panelA = tk.Label(image=img, bg="#1A1A2E", bd=2, relief="solid")
-        panelA.image = img
-        panelA.place(x=50, y=180, width=400, height=400)
-        panelB = tk.Label(image=img, bg="#1A1A2E", bd=2, relief="solid")
-        panelB.image = img
-        panelB.place(x=550, y=180, width=400, height=400)
-    else:
-        panelA.configure(image=img)
-        panelB.configure(image=img)
-        panelA.image = img
-        panelB.image = img
-def en_fun():
-    global x, image_encrypted, key
-    image_input = cv2.imread(x, 0)
-    (x1, y) = image_input.shape
-    image_input = image_input.astype(float) / 255.0
-    mu, sigma = 0, 0.1  # Mean and standard deviation
-    key = np.random.normal(mu, sigma, (x1, y)) + np.finfo(float).eps
-    image_encrypted = image_input / key
-    cv2.imwrite('image_encrypted.jpg', image_encrypted * 255)
-    imge = Image.open('image_encrypted.jpg')
-    imge = ImageTk.PhotoImage(imge)
-    panelB.configure(image=imge)
-    panelB.image = imge
-    mbox.showinfo("Encrypt Status", "Image Encrypted Successfully.")
-def de_fun():
-    global image_encrypted, key
-    image_output = image_encrypted * key
-    image_output *= 255.0
-    cv2.imwrite('image_output.jpg', image_output)
-    imgd = Image.open('image_output.jpg')
-    imgd = ImageTk.PhotoImage(imgd)
-    panelB.configure(image=imgd)
-    panelB.image = imgd
-    mbox.showinfo("Decrypt Status", "Image Decrypted Successfully.")
-def reset():
-    global x, eimg
-    image = cv2.imread(x)[:, :, ::-1]
-    eimg = Image.fromarray(image)
-    image = ImageTk.PhotoImage(eimg)
-    panelB.configure(image=image)
-    panelB.image = image
-    mbox.showinfo("Success", "Image Reset to Original Format!")
-def save_img():
-    global eimg
-    filename = filedialog.asksaveasfile(mode='w', defaultextension=".jpg")
-    if not filename:
-        return
-    eimg.save(filename)
-    mbox.showinfo("Success", "Encrypted Image Saved Successfully!")
-header_frame = tk.Frame(window, bg="#16213E", pady=20)
-header_frame.pack(fill="x")
-header_label = tk.Label(header_frame, text="Image Encryption & Decryption", font=("Verdana", 28, "bold"), fg="#E94560", bg="#16213E")
-header_label.pack()
-img_frame = tk.Frame(window, bg="#1A1A2E")
-img_frame.pack(pady=20)
-btn_frame = tk.Frame(window, bg="#1A1A2E")
-btn_frame.pack(pady=10)
-choose_btn = tk.Button(btn_frame, text="Choose Image", command=open_img, font=("Verdana", 16), bg="#0F3460", fg="#FFFFFF", padx=20, pady=10, relief="flat")
-choose_btn.grid(row=0, column=0, padx=10)
-save_btn = tk.Button(btn_frame, text="Save Image", command=save_img, font=("Verdana", 16), bg="#0F3460", fg="#FFFFFF", padx=20, pady=10, relief="flat")
-save_btn.grid(row=0, column=1, padx=10)
-encrypt_btn = tk.Button(btn_frame, text="Encrypt", command=en_fun, font=("Verdana", 16), bg="#533483", fg="#FFFFFF", padx=20, pady=10, relief="flat")
-encrypt_btn.grid(row=1, column=0, padx=10, pady=10)
-decrypt_btn = tk.Button(btn_frame, text="Decrypt", command=de_fun, font=("Verdana", 16), bg="#533483", fg="#FFFFFF", padx=20, pady=10, relief="flat")
-decrypt_btn.grid(row=1, column=1, padx=10, pady=10)
-reset_btn = tk.Button(btn_frame, text="Reset", command=reset, font=("Verdana", 16), bg="#E94560", fg="#FFFFFF", padx=20, pady=10, relief="flat")
-reset_btn.grid(row=2, column=0, columnspan=2, pady=10)
-def exit_win():
-    if mbox.askokcancel("Exit", "Do you want to exit?"):
-        window.destroy()
-exit_btn = tk.Button(window, text="EXIT", command=exit_win, font=("Verdana", 16, "bold"), bg="#F3722C", fg="#FFFFFF", padx=20, pady=10, relief="flat")
-exit_btn.pack(pady=20)
-window.protocol("WM_DELETE_WINDOW", exit_win)
-window.mainloop()
+
+class SecurePixApp:
+    def __init__(self, window):
+        self.window = window
+        self.window.geometry("900x600")
+        self.window.title("SecurePix - Advanced Image Encryption")
+        self.window.configure(bg="#111827")
+        
+        self.setup_variables()
+        self.create_ui()
+        
+    def setup_variables(self):
+        self.current_image_path = None
+        self.eimg = None
+        self.image_encrypted = None
+        self.key = None
+        
+    def create_ui(self):
+        brand_frame = tk.Frame(self.window, bg="#1F2937", pady=40)
+        brand_frame.pack(fill="x")
+        
+        brand_name = tk.Label(brand_frame, 
+                            text="SecurePix", 
+                            font=("Helvetica", 42, "bold"), 
+                            fg="#6EE7B7",
+                            bg="#1F2937")
+        brand_name.pack()
+        
+        tagline = tk.Label(brand_frame,
+                          text="Advanced Image Security System",
+                          font=("Helvetica", 16),
+                          fg="#9CA3AF",
+                          bg="#1F2937")
+        tagline.pack(pady=(5, 0))
+        
+        status_card = tk.Frame(self.window, bg="#374151", pady=20, padx=30)
+        status_card.pack(fill="x", padx=40, pady=30)
+        
+        status_title = tk.Label(status_card,
+                              text="OPERATION STATUS",
+                              font=("Helvetica", 12, "bold"),
+                              fg="#6EE7B7",
+                              bg="#374151")
+        status_title.pack()
+        
+        self.status_label = tk.Label(status_card,
+                                   text="Ready to process images",
+                                   font=("Helvetica", 14),
+                                   fg="#E5E7EB",
+                                   bg="#374151")
+        self.status_label.pack(pady=(10, 0))
+        
+        actions_frame = tk.Frame(self.window, bg="#111827", pady=20)
+        actions_frame.pack(fill="x", padx=40)
+        
+        file_frame = tk.Frame(actions_frame, bg="#111827")
+        file_frame.pack(fill="x", pady=(0, 20))
+        
+        self.create_button(file_frame, "📁 Select Image", self.open_img, "#3B82F6", 0, 0)
+        self.create_button(file_frame, "💾 Save Image", self.save_img, "#3B82F6", 0, 1)
+        
+        encrypt_frame = tk.Frame(actions_frame, bg="#111827")
+        encrypt_frame.pack(fill="x", pady=(0, 20))
+        
+        self.create_button(encrypt_frame, "🔒 Encrypt", self.en_fun, "#059669", 0, 0)
+        self.create_button(encrypt_frame, "🔓 Decrypt", self.de_fun, "#059669", 0, 1)
+        
+        reset_frame = tk.Frame(actions_frame, bg="#111827")
+        reset_frame.pack(fill="x")
+        
+        self.create_button(reset_frame, "↺ Reset Image", self.reset, "#6366F1", 0, 0, 2)
+        
+        footer_frame = tk.Frame(self.window, bg="#111827", pady=30)
+        footer_frame.pack(side="bottom", fill="x")
+        
+        exit_btn = tk.Button(footer_frame,
+                           text="Exit SecurePix",
+                           command=self.exit_win,
+                           font=("Helvetica", 12, "bold"),
+                           bg="#DC2626",
+                           fg="white",
+                           padx=25,
+                           pady=12,
+                           relief="flat",
+                           cursor="hand2")
+        exit_btn.pack()
+        
+    def create_button(self, parent, text, command, color, row, col, colspan=1):
+        btn = tk.Button(parent,
+                       text=text,
+                       command=command,
+                       font=("Helvetica", 13, "bold"),
+                       bg=color,
+                       fg="white",
+                       padx=35,
+                       pady=15,
+                       relief="flat",
+                       cursor="hand2")
+        btn.grid(row=row, column=col, columnspan=colspan, padx=10, pady=8, sticky="ew")
+        parent.grid_columnconfigure(col, weight=1)
+        
+    def open_img(self):
+        x = filedialog.askopenfilename(title='Select Image')
+        if not x:
+            return
+            
+        try:
+            self.current_image_path = x
+            self.eimg = Image.open(x)
+            self.status_label.config(text=f"✅ Image loaded: {x.split('/')[-1]}")
+            mbox.showinfo("SecurePix", "Image loaded successfully!")
+        except Exception as e:
+            mbox.showerror("Error", f"Failed to open image: {str(e)}")
+    
+    def en_fun(self):
+        if not self.current_image_path:
+            mbox.showerror("Error", "Please select an image first!")
+            return
+            
+        try:
+            image_input = cv2.imread(self.current_image_path, 0)
+            (x1, y) = image_input.shape
+            image_input = image_input.astype(float) / 255.0
+            
+            mu, sigma = 0, 0.1
+            self.key = np.random.normal(mu, sigma, (x1, y)) + np.finfo(float).eps
+            self.image_encrypted = image_input / self.key
+            
+            cv2.imwrite('image_encrypted.jpg', self.image_encrypted * 255)
+            self.eimg = Image.open('image_encrypted.jpg')
+            
+            self.status_label.config(text="🔒 Image encrypted successfully")
+            mbox.showinfo("SecurePix", "Image encrypted successfully!")
+        except Exception as e:
+            mbox.showerror("Error", f"Encryption failed: {str(e)}")
+    
+    def de_fun(self):
+        if self.image_encrypted is None or self.key is None:
+            mbox.showerror("Error", "No encrypted image to decrypt!")
+            return
+            
+        try:
+            image_output = self.image_encrypted * self.key
+            image_output *= 255.0
+            
+            cv2.imwrite('image_output.jpg', image_output)
+            self.eimg = Image.open('image_output.jpg')
+            
+            self.status_label.config(text="🔓 Image decrypted successfully")
+            mbox.showinfo("SecurePix", "Image decrypted successfully!")
+        except Exception as e:
+            mbox.showerror("Error", f"Decryption failed: {str(e)}")
+    
+    def reset(self):
+        if not self.current_image_path:
+            mbox.showerror("Error", "No image to reset!")
+            return
+            
+        try:
+            image = cv2.imread(self.current_image_path)[:, :, ::-1]
+            self.eimg = Image.fromarray(image)
+            self.status_label.config(text=f"↺ Image reset to original")
+            mbox.showinfo("SecurePix", "Image reset to original format!")
+        except Exception as e:
+            mbox.showerror("Error", f"Reset failed: {str(e)}")
+    
+    def save_img(self):
+        if self.eimg is None:
+            mbox.showerror("Error", "No image to save!")
+            return
+            
+        try:
+            filename = filedialog.asksaveasfile(mode='w', defaultextension=".jpg")
+            if not filename:
+                return
+                
+            self.eimg.save(filename)
+            self.status_label.config(text=f"💾 Image saved successfully")
+            mbox.showinfo("SecurePix", "Image saved successfully!")
+        except Exception as e:
+            mbox.showerror("Error", f"Failed to save image: {str(e)}")
+    
+    def exit_win(self):
+        if mbox.askokcancel("Exit SecurePix", "Do you want to exit SecurePix?"):
+            self.window.destroy()
+
+if __name__ == "__main__":
+    window = tk.Tk()
+    app = SecurePixApp(window)
+    window.protocol("WM_DELETE_WINDOW", app.exit_win)
+    window.mainloop()
